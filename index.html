@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SF & California Parental Leave Planner</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #f0f4f8; --surface: #ffffff; --surface2: #f4f7fa;
+    --border: #dae2ea; --border2: #b8c6d1;
+    --text: #1a2630; --text2: #4a5a68; --text3: #8a9aaa;
+    --green: #1D9E75; --green-bg: #e4f5ef; --green-text: #085041;
+    --blue: #1a7fc4;  --blue-bg: #e6f2fb;  --blue-text: #0a3a5c;
+    --slate: #4a6fa5; --slate-bg: #eaf0f8; --slate-text: #1e3558;
+    --coral: #c0533a; --coral-bg: #faecea; --coral-text: #5c1e10;
+    --amber: #b07a10; --amber-bg: #faf3e0; --amber-text: #4a3000;
+    --red: #b83030;   --red-bg: #faebeb;   --red-text: #4a1010;
+    --radius: 10px; --radius-sm: 6px; --accent: #1a7fc4;
+  }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 14px; background: var(--bg); color: var(--text); min-height: 100vh; }
+  .page { max-width: 780px; margin: 0 auto; padding: 40px 20px 80px; }
+
+  .header { margin-bottom: 32px; }
+  .header h1 { font-size: 24px; font-weight: 600; margin-bottom: 6px; color: var(--text); }
+  .header p { color: var(--text2); font-size: 13px; line-height: 1.6; }
+
+  .card { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 24px; margin-bottom: 16px; }
+  .card-title { font-size: 11px; font-weight: 600; color: var(--accent); margin-bottom: 16px; padding-bottom: 12px; border-bottom: 0.5px solid var(--border); text-transform: uppercase; letter-spacing: 0.07em; }
+
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+  .field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 16px; }
+  .field:last-child { margin-bottom: 0; }
+  .field label { font-size: 11px; font-weight: 500; color: var(--text3); text-transform: uppercase; letter-spacing: 0.05em; }
+  .field .hint { font-size: 11px; color: var(--text3); }
+
+  select, input[type=number] {
+    height: 38px; padding: 0 12px; font-size: 13px; font-family: inherit;
+    color: var(--text); background: var(--surface2); border: 0.5px solid var(--border2);
+    border-radius: var(--radius-sm); outline: none; width: 100%;
+    appearance: none; -webkit-appearance: none; transition: border-color 0.15s;
+  }
+  select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='7' viewBox='0 0 12 7'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23888' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px; cursor: pointer; }
+  select:focus, input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(26,127,196,0.12); background: var(--surface); }
+
+  .btn-primary { width: 100%; height: 46px; background: var(--accent); color: #fff; border: none; border-radius: var(--radius); font-size: 14px; font-weight: 600; font-family: inherit; cursor: pointer; transition: background 0.15s, transform 0.1s; margin-top: 8px; }
+  .btn-primary:hover { background: #145f96; }
+  .btn-primary:active { transform: scale(0.99); }
+
+  #results { display: none; margin-top: 32px; }
+  .section-heading { font-size: 11px; font-weight: 600; color: var(--accent); text-transform: uppercase; letter-spacing: 0.07em; margin: 28px 0 12px; }
+  .section-heading:first-child { margin-top: 0; }
+
+  .badge-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; margin-bottom: 8px; }
+  .badge { border-radius: var(--radius-sm); padding: 14px 16px; }
+  .badge .badge-name { font-size: 12px; font-weight: 600; margin-bottom: 3px; }
+  .badge .badge-status { font-size: 11px; line-height: 1.5; }
+  .badge.yes { background: var(--blue-bg); border: 0.5px solid #90c4e8; }
+  .badge.yes .badge-name { color: var(--blue-text); }
+  .badge.yes .badge-status { color: var(--blue); }
+  .badge.no { background: var(--surface2); border: 0.5px solid var(--border); }
+  .badge.no .badge-name { color: var(--text2); }
+  .badge.no .badge-status { color: var(--text3); }
+
+  .legend { display: flex; flex-wrap: wrap; gap: 10px 18px; margin-bottom: 16px; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text2); }
+  .legend-swatch { width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0; }
+
+  .tl-phase-label { font-size: 11px; font-weight: 500; color: var(--text3); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
+  .tl-row { display: flex; align-items: center; gap: 10px; margin-bottom: 5px; }
+  .tl-name { width: 70px; flex-shrink: 0; font-size: 11px; font-weight: 500; color: var(--text2); text-align: right; }
+  .tl-track { flex: 1; height: 24px; background: var(--surface2); border-radius: 4px; position: relative; }
+  .tl-bar { position: absolute; top: 0; height: 24px; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 500; white-space: nowrap; overflow: hidden; padding: 0 8px; }
+  .tl-bar.green  { background: var(--green-bg);  color: var(--green-text); border: 0.5px solid #7dcfb0; }
+  .tl-bar.slate  { background: var(--slate-bg);  color: var(--slate-text); border: 0.5px solid #9ab4d8; }
+  .tl-bar.blue   { background: var(--blue-bg);   color: var(--blue-text);  border: 0.5px solid #90c4e8; }
+  .tl-bar.coral  { background: var(--coral-bg);  color: var(--coral-text); border: 0.5px solid #e0a090; }
+  .tl-divider { display: flex; align-items: center; gap: 10px; margin: 12px 0; }
+  .tl-divider-label { font-size: 11px; color: var(--accent); font-weight: 500; white-space: nowrap; padding: 0 6px; }
+  .tl-divider-line { flex: 1; height: 0; border-top: 1px dashed var(--border2); }
+
+  .pay-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .pay-table th { text-align: left; font-size: 11px; font-weight: 600; color: var(--accent); text-transform: uppercase; letter-spacing: 0.05em; padding: 10px 14px; border-bottom: 0.5px solid var(--border); background: var(--surface2); }
+  .pay-table td { padding: 10px 14px; border-bottom: 0.5px solid var(--border); color: var(--text); vertical-align: top; line-height: 1.5; }
+  .pay-table tr:last-child td { border-bottom: none; }
+  .pay-table tr:nth-child(even) td { background: var(--surface2); }
+  .pay-amount { font-weight: 500; }
+
+  .consideration { display: flex; gap: 12px; padding: 14px 16px; border-radius: var(--radius-sm); margin-bottom: 8px; }
+  .consideration.warn { background: var(--amber-bg); border: 0.5px solid #d4b060; }
+  .consideration.info { background: var(--blue-bg);  border: 0.5px solid #90c4e8; }
+  .consideration.risk { background: var(--red-bg);   border: 0.5px solid #e09090; }
+  .consideration.ok   { background: var(--green-bg); border: 0.5px solid #7dcfb0; }
+  .con-icon { font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+  .con-title { font-size: 12px; font-weight: 600; margin-bottom: 3px; }
+  .consideration.warn .con-title { color: var(--amber-text); }
+  .consideration.info .con-title { color: var(--blue-text); }
+  .consideration.risk .con-title { color: var(--red-text); }
+  .consideration.ok   .con-title { color: var(--green-text); }
+  .con-body { font-size: 12px; line-height: 1.6; color: var(--text2); }
+
+  .checklist { list-style: none; padding: 0; margin: 0; }
+  .checklist li { display: flex; align-items: flex-start; gap: 12px; padding: 13px 0; border-bottom: 0.5px solid var(--border); }
+  .checklist li:last-child { border-bottom: none; }
+  .check-box { width: 18px; height: 18px; min-width: 18px; border: 1.5px solid var(--border2); border-radius: 4px; margin-top: 1px; }
+  .check-label strong { font-weight: 600; font-size: 13px; display: block; margin-bottom: 3px; color: var(--text); }
+  .check-label span { font-size: 12px; color: var(--text2); line-height: 1.6; }
+  .check-label a { color: var(--accent); text-decoration: none; border-bottom: 0.5px solid #90c4e8; }
+  .check-label a:hover { border-bottom-color: var(--accent); }
+
+  .resources-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 10px; }
+  .resource-card { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-sm); padding: 14px 16px; text-decoration: none; display: block; transition: border-color 0.15s, background 0.15s; }
+  .resource-card:hover { border-color: var(--accent); background: var(--blue-bg); }
+  .rc-tag { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--accent); margin-bottom: 4px; }
+  .rc-name { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 3px; }
+  .rc-desc { font-size: 11px; color: var(--text3); line-height: 1.5; }
+
+  .disclaimer { font-size: 11px; color: var(--text3); line-height: 1.6; margin-top: 28px; padding: 14px; background: var(--surface2); border-radius: var(--radius-sm); border: 0.5px solid var(--border); }
+
+  @media (max-width: 540px) {
+    .grid2, .grid3 { grid-template-columns: 1fr; }
+    .tl-name { width: 52px; font-size: 10px; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="header">
+    <h1>SF & California parental leave planner</h1>
+    <p>Enter your details to see every program you qualify for, how your leaves stack concurrently, estimated pay at each phase, and key next steps.</p>
+  </div>
+
+  <div class="card">
+    <div class="card-title">About the employee</div>
+    <div class="grid2">
+      <div class="field">
+        <label>Parent type</label>
+        <select id="parentType">
+          <option value="birth">Birth parent</option>
+          <option value="nonbirth">Non-birth parent</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Leave event</label>
+        <select id="leaveEvent">
+          <option value="birth">Birth of child</option>
+          <option value="adoption">Adoption</option>
+          <option value="foster">Foster placement</option>
+        </select>
+      </div>
+    </div>
+    <div class="grid2">
+      <div class="field">
+        <label>Weekly gross salary ($)</label>
+        <input type="number" id="salary" placeholder="e.g. 3000" min="0" step="50"/>
+        <span class="hint">Before tax, per week</span>
+      </div>
+      <div class="field">
+        <label>Delivery type</label>
+        <select id="delivery">
+          <option value="vaginal">Vaginal birth</option>
+          <option value="csection">C-section</option>
+          <option value="na">N/A — adoption or foster</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">About the employer & work situation</div>
+    <div class="grid3">
+      <div class="field">
+        <label>Total employees (worldwide)</label>
+        <select id="eeCount">
+          <option value="u5">Fewer than 5</option>
+          <option value="5to19">5–19</option>
+          <option value="20to49">20–49</option>
+          <option value="50plus" selected>50 or more</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Work location</label>
+        <select id="location">
+          <option value="sf40">Works in SF (40%+ of hrs)</option>
+          <option value="sfunder40">Works in SF (under 40%)</option>
+          <option value="caonly">California, outside SF</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Tenure at employer</label>
+        <select id="tenure">
+          <option value="u180">Under 180 days</option>
+          <option value="180to12mo">180 days – 12 months</option>
+          <option value="over12mo" selected>Over 12 months</option>
+        </select>
+      </div>
+    </div>
+    <div class="grid2">
+      <div class="field">
+        <label>Employer paid leave policy</label>
+        <select id="employerPolicy">
+          <option value="none">None</option>
+          <option value="partial">Partial — less than 100%</option>
+          <option value="full2">100% for 2 weeks</option>
+          <option value="full4">100% for 4 weeks</option>
+          <option value="full8">100% for 8 weeks</option>
+          <option value="full12">100% for 12 weeks</option>
+          <option value="full16">100% for 16 weeks</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Accrued PTO / vacation available</label>
+        <select id="pto">
+          <option value="none">None</option>
+          <option value="u2wk">Less than 2 weeks</option>
+          <option value="2to4wk">2–4 weeks</option>
+          <option value="over4wk">More than 4 weeks</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <button class="btn-primary" onclick="calculate()">Calculate my leave plan</button>
+
+  <div id="results">
+    <div class="section-heading">Programs you qualify for</div>
+    <div class="badge-grid" id="eligBadges"></div>
+
+    <div class="section-heading">Concurrent leave timeline</div>
+    <div class="legend">
+      <div class="legend-item"><div class="legend-swatch" style="background:#e4f5ef;border:0.5px solid #7dcfb0"></div>CA state — job protection</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:#eaf0f8;border:0.5px solid #9ab4d8"></div>Federal FMLA — job protection</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:#e6f2fb;border:0.5px solid #90c4e8"></div>EDD wage replacement</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:#faecea;border:0.5px solid #e0a090"></div>SF PPLO employer top-up</div>
+    </div>
+    <div class="card" style="padding:20px">
+      <div id="timelineContainer"></div>
+    </div>
+
+    <div class="section-heading">Pay by phase</div>
+    <div class="card" style="padding:0;overflow:hidden">
+      <table class="pay-table">
+        <thead><tr><th>Phase</th><th>Duration</th><th>Protection</th><th>Weekly pay</th></tr></thead>
+        <tbody id="payRows"></tbody>
+      </table>
+    </div>
+
+    <div class="section-heading">Eligibility notes & key considerations</div>
+    <div id="considerations"></div>
+
+    <div class="section-heading">Next steps & checklist</div>
+    <div class="card" style="padding: 4px 20px;">
+      <ul class="checklist" id="nextStepsList"></ul>
+    </div>
+
+    <div class="section-heading">Useful resources</div>
+    <div class="resources-grid" id="resourcesGrid"></div>
+
+    <div class="disclaimer">
+      This tool provides general informational guidance only and does not constitute legal or HR advice. Leave laws change annually — caps and rates shown reflect 2025 figures. Always verify current EDD rates at <a href="https://edd.ca.gov" target="_blank" style="color:var(--accent)">edd.ca.gov</a> and consult an employment attorney or HR professional for your specific situation.
+    </div>
+  </div>
+
+</div>
+<script>
+const PFL_MAX_WEEKLY = 1681;
+const PPLO_CAP_WEEKLY = 2402;
+
+function getInputs() {
+  return {
+    parentType:     document.getElementById('parentType').value,
+    leaveEvent:     document.getElementById('leaveEvent').value,
+    salary:         parseFloat(document.getElementById('salary').value) || 0,
+    delivery:       document.getElementById('delivery').value,
+    eeCount:        document.getElementById('eeCount').value,
+    location:       document.getElementById('location').value,
+    tenure:         document.getElementById('tenure').value,
+    employerPolicy: document.getElementById('employerPolicy').value,
+    pto:            document.getElementById('pto').value,
+  };
+}
+
+function getEligibility(inp) {
+  const ee = inp.eeCount;
+  const over12mo  = inp.tenure === 'over12mo';
+  const over180   = inp.tenure !== 'u180';
+  const sf40      = inp.location === 'sf40';
+  const birth     = inp.parentType === 'birth';
+  const policyWks = { full2:2, full4:4, full8:8, full12:12, full16:16 }[inp.employerPolicy] || 0;
+  const policyMeetsPPLO = policyWks >= 8;
+
+  return {
+    fmla:             ee === '50plus' && over12mo,
+    cfra:             ee !== 'u5' && over12mo,
+    pdl:              birth && ee !== 'u5',
+    sdi:              birth,
+    pfl:              over12mo || inp.tenure === '180to12mo',
+    pplo:             (ee === '20to49' || ee === '50plus') && sf40 && over180 && !policyMeetsPPLO,
+    pplo_exempt:      policyMeetsPPLO,
+    employerPolicyWks: policyWks,
+  };
+}
+
+function pflWeekly(salary) {
+  if (!salary) return null;
+  return Math.min(Math.round(salary * 0.67), PFL_MAX_WEEKLY);
+}
+function sdiWeekly(salary) {
+  if (!salary) return null;
+  return Math.round(salary * 0.67);
+}
+function pplo(salary, pflAmt) {
+  if (!salary || !pflAmt) return null;
+  return Math.max(0, Math.min(salary - pflAmt, PPLO_CAP_WEEKLY - pflAmt));
+}
+function fmt(n) { return n ? '$' + Math.round(n).toLocaleString() : null; }
+function birth(inp) { return inp.parentType === 'birth'; }
+
+function calculate() {
+  const inp = getInputs();
+  const el  = getEligibility(inp);
+  const s   = inp.salary;
+  const pfl = pflWeekly(s);
+  const sdi = sdiWeekly(s);
+  const pp  = el.pplo ? pplo(s, pfl) : 0;
+  const recovWks = inp.delivery === 'csection' ? 8 : 6;
+
+  renderBadges(el, inp);
+  renderTimeline(el, inp, recovWks);
+  renderPayTable(el, inp, s, pfl, sdi, pp, recovWks);
+  renderConsiderations(el, inp, s, pfl, pp);
+  renderNextSteps(el, inp);
+
+  const results = document.getElementById('results');
+  results.style.display = 'block';
+  results.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function renderBadges(el, inp) {
+  const b = birth(inp);
+  const programs = [
+    { name: 'FMLA (federal)',            yes: el.fmla, reason: el.fmla ? '50+ employees, 12+ months tenure' : inp.eeCount !== '50plus' ? 'Employer under 50 employees' : 'Under 12 months tenure' },
+    { name: 'CFRA (California)',         yes: el.cfra, reason: el.cfra ? '5+ employees, 12+ months tenure' : inp.eeCount === 'u5' ? 'Employer under 5 employees' : 'Under 12 months tenure' },
+    { name: 'PDL (pregnancy disability)',yes: el.pdl,  reason: el.pdl  ? '5+ employees, birth parent' : !b ? 'Non-birth parents not eligible' : 'Employer under 5 employees', hide: !b },
+    { name: 'SDI (state disability)',    yes: el.sdi,  reason: el.sdi  ? 'SDI payroll contributor, birth parent' : 'Non-birth parents not eligible for SDI', hide: !b },
+    { name: 'PFL (paid family leave)',   yes: el.pfl,  reason: el.pfl  ? 'SDI contributor — up to 8 wks at ~67%' : 'Insufficient tenure' },
+    { name: 'SF PPLO (employer top-up)', yes: el.pplo, reason: el.pplo ? '20+ employees, SF 40%+ hrs, 180+ days tenure' : el.pplo_exempt ? 'Employer policy (100% for 8+ wks) meets PPLO standard' : inp.location !== 'sf40' ? 'Must work 40%+ hours in SF' : inp.eeCount === 'u5' || inp.eeCount === '5to19' ? 'Employer under 20 employees' : 'Under 180 days tenure' },
+  ];
+  document.getElementById('eligBadges').innerHTML = programs
+    .filter(p => !p.hide)
+    .map(p => `<div class="badge ${p.yes ? 'yes' : 'no'}"><div class="badge-name">${p.name}</div><div class="badge-status">${p.yes ? '✓ Eligible' : '✗ Not eligible'} — ${p.reason}</div></div>`)
+    .join('');
+}
+
+function renderTimeline(el, inp, recovWks) {
+  const b = birth(inp);
+  const disWks  = b && inp.leaveEvent === 'birth' ? recovWks + 4 : 0;
+  const bondWks = 12;
+  const total   = disWks + bondWks;
+  const c = document.getElementById('timelineContainer');
+  let html = '';
+
+  function bar(start, wks, cls, label) {
+    const l = Math.round(start / total * 100);
+    const w = Math.round(wks   / total * 100);
+    return `<div class="tl-bar ${cls}" style="left:${l}%;width:${w}%">${label}</div>`;
+  }
+  function row(name, inner) {
+    return `<div class="tl-row"><div class="tl-name">${name}</div><div class="tl-track">${inner}</div></div>`;
+  }
+  function divider(label) {
+    return `<div class="tl-divider"><div class="tl-divider-line"></div><div class="tl-divider-label">${label}</div><div class="tl-divider-line"></div></div>`;
+  }
+
+  if (b && inp.leaveEvent === 'birth') {
+    html += `<div class="tl-phase-label">Disability phase (birth parent)</div>`;
+    if (el.pdl)  html += row('PDL',  bar(0, disWks, 'green', 'Job protected — up to ' + disWks + ' wks'));
+    if (el.fmla) html += row('FMLA', bar(0, Math.min(12, disWks), 'slate', 'Concurrent with PDL'));
+    if (el.sdi)  html += row('SDI',  bar(0, disWks, 'blue',  '~67% wages via EDD'));
+    html += divider('PDL ends · bonding begins');
+  }
+
+  html += `<div class="tl-phase-label">Bonding phase</div>`;
+  if (el.cfra) html += row('CFRA', bar(disWks, bondWks, 'green', 'Job protected — 12 wks'));
+  if (el.fmla) html += row('FMLA', bar(disWks, bondWks, 'slate', 'Concurrent with CFRA'));
+  if (el.pfl)  html += row('PFL',  bar(disWks, 8, 'blue', '~67% wages — 8 wks'));
+  if (el.pplo) html += row('PPLO', bar(disWks, 8, 'coral', 'Employer top-up to 100% — 8 wks'));
+
+  const markers = [];
+  for (let w = 0; w <= total; w += 4) {
+    markers.push(`<div style="position:absolute;left:${Math.round(w/total*100)}%;font-size:10px;color:var(--text3);transform:translateX(-50%);top:2px">wk ${w}</div>`);
+  }
+  html += `<div style="position:relative;height:18px;margin:8px 0 0 80px">${markers.join('')}</div>`;
+  c.innerHTML = html;
+}
+
+function renderPayTable(el, inp, s, pfl, sdi, pp, recovWks) {
+  const b = birth(inp);
+  const rows = [];
+  const prot = function(a, b) { return [a ? 'CFRA' : null, b ? 'FMLA' : null].filter(Boolean).join(' + ') || 'None'; };
+
+  if (b && inp.leaveEvent === 'birth') {
+    const sdiAmt = sdi ? Math.min(sdi, s) : null;
+    const sdiLabel = sdiAmt ? 'SDI: ' + fmt(sdiAmt) + '/wk (' + Math.round(sdiAmt/s*100) + '%)' : 'No wage replacement';
+    rows.push({ phase: 'Pre-birth disability', dur: '~4 weeks', prot: [el.pdl?'PDL':null,el.fmla?'FMLA':null].filter(Boolean).join(' + ')||'None', pay: sdiLabel });
+    rows.push({ phase: 'Post-birth recovery',  dur: recovWks + ' weeks', prot: [el.pdl?'PDL':null,el.fmla?'FMLA':null].filter(Boolean).join(' + ')||'None', pay: sdiLabel });
+  }
+
+  const bondProt = prot(el.cfra, el.fmla);
+  let bondPay;
+  if (!s) {
+    bondPay = el.pplo ? 'PFL (~67%) + PPLO employer top-up' : 'PFL from EDD (~67%)';
+  } else if (el.pplo && pp) {
+    const total = Math.min((pfl || 0) + pp, PPLO_CAP_WEEKLY);
+    bondPay = 'PFL ' + fmt(pfl) + ' + PPLO ' + fmt(pp) + ' = ' + fmt(total) + '/wk (' + Math.round(total/s*100) + '%)';
+  } else {
+    bondPay = pfl ? 'PFL: ' + fmt(pfl) + '/wk (' + Math.round(pfl/s*100) + '%)' : 'PFL from EDD (~67%)';
+  }
+
+  rows.push({ phase: 'Baby bonding — weeks 1–8',  dur: '8 weeks', prot: bondProt, pay: bondPay });
+  rows.push({ phase: 'Baby bonding — weeks 9–12', dur: '4 weeks', prot: bondProt, pay: 'Unpaid (PFL & PPLO exhausted)' });
+
+  document.getElementById('payRows').innerHTML = rows.map(r =>
+    `<tr><td>${r.phase}</td><td>${r.dur}</td><td style="font-size:12px;color:var(--text2)">${r.prot}</td><td class="pay-amount">${r.pay}</td></tr>`
+  ).join('');
+}
+
+function renderConsiderations(el, inp, s, pfl, pp) {
+  const b = birth(inp);
+  const items = [];
+
+  if (b && el.pplo) items.push({ type:'info', icon:'i', title:'PPLO applies to bonding only — not disability', body:'The SF employer top-up starts when bonding leave begins, not during your PDL/SDI disability period. You\'ll receive SDI only (~67%) during recovery, then the full PPLO top-up once bonding starts.' });
+  if (el.pplo_exempt && el.employerPolicyWks >= 8) items.push({ type:'ok', icon:'✓', title:'Employer policy meets or exceeds PPLO', body:'Your employer pays 100% for ' + el.employerPolicyWks + ' weeks, which satisfies the SF PPLO requirement (8+ weeks needed). You receive full pay from your employer directly — no separate PPLO claim required.' });
+  if (['full2','full4'].includes(inp.employerPolicy)) {
+    const wks = el.employerPolicyWks;
+    items.push({ type:'warn', icon:'⚠', title:'Employer pays 100% for ' + wks + ' weeks — PPLO still applies for remaining weeks', body:'Your employer\'s policy covers ' + wks + ' weeks at full pay, but the SF PPLO requires 8 weeks to qualify for the exemption. Your employer must still provide the PPLO top-up for the remaining ' + (8 - wks) + ' weeks of bonding leave.' });
+  }
+  if (inp.pto !== 'none' && el.pplo) items.push({ type:'warn', icon:'⚠', title:'Employer may require PTO before PPLO kicks in', body:'Under PPLO rules, your employer can require up to 2 weeks of accrued vacation/PTO before the employer top-up begins, and up to 2 more weeks once PFL starts. Sick leave cannot be required.' });
+  if (inp.tenure === 'u180') items.push({ type:'risk', icon:'!', title:'Under 180 days — limited protections', body:'You don\'t yet qualify for CFRA (12 months required), FMLA, or SF PPLO. PDL may still apply if you\'re a birth parent at a 5+ employee company. Check your employer\'s own leave policy.' });
+  if (inp.tenure === '180to12mo') items.push({ type:'warn', icon:'⚠', title:'180 days but under 12 months — partial eligibility', body:'You may qualify for SF PPLO wage top-up (if other criteria met), but not yet CFRA or FMLA job protection (requires 12 months). Confirm your exact start date carefully.' });
+  if (inp.location === 'sfunder40') items.push({ type:'warn', icon:'⚠', title:'SF work hours under 40% — PPLO may not apply', body:'SF PPLO requires at least 40% of your total weekly hours worked in San Francisco. If you\'re primarily remote, you may not qualify for the employer top-up. Verify your typical weekly SF hours.' });
+  if (inp.location === 'caonly') items.push({ type:'info', icon:'i', title:'Outside SF — no PPLO, but full CA protections apply', body:'You\'re not covered by the SF Paid Parental Leave Ordinance, but all California state programs (CFRA, PDL, PFL, SDI) still apply. PFL provides ~67% wage replacement for up to 8 weeks.' });
+  if (s > PPLO_CAP_WEEKLY && el.pplo) items.push({ type:'warn', icon:'⚠', title:'Salary above PPLO cap — pay will not reach 100%', body:'The PPLO weekly cap is $2,402 in 2025. Your salary of ' + fmt(s) + '/week exceeds this, so your total bonding pay will be capped at $2,402/week — not your full salary.' });
+  if (el.pplo) items.push({ type:'info', icon:'i', title:'PPLO reimbursement clause', body:'You\'ll need to sign a form agreeing to repay the PPLO supplement if you voluntarily leave within 90 days of PFL ending and your employer requests repayment in writing.' });
+  if (!el.cfra) items.push({ type:'risk', icon:'!', title:'No CFRA job protection', body:'Your employer size or tenure means CFRA job protection does not apply. You may still take leave, but you\'re at greater risk of not having your position held. Consult an employment attorney.' });
+  if (el.pfl) items.push({ type:'info', icon:'i', title:'Applying for PFL & SDI — file with EDD', body:'File your SDI claim (disability/pregnancy) and PFL claim (bonding) separately at edd.ca.gov. For PPLO: first get your EDD Notice of Computation, then submit the SF PPLO form to your employer.' });
+  items.push({ type:'info', icon:'i', title:'Both parents can take leave simultaneously', body:'If both parents are employees, each can take CFRA and PFL concurrently — they don\'t need to stagger. Each parent has their own independent entitlement.' });
+
+  document.getElementById('considerations').innerHTML = items.map(i =>
+    `<div class="consideration ${i.type}"><div class="con-icon">${i.icon}</div><div><div class="con-title">${i.title}</div><div class="con-body">${i.body}</div></div></div>`
+  ).join('');
+}
+
+function renderNextSteps(el, inp) {
+  const b   = birth(inp);
+  const sf  = inp.location === 'sf40';
+  const steps = [];
+
+  steps.push({
+    title: 'Notify your employer as early as possible',
+    detail: 'Give at least 30 days notice when foreseeable (required for CFRA/FMLA). Your employer must respond in writing confirming your leave rights and dates. Keep copies of all communications.'
+  });
+
+  if (b && el.sdi) steps.push({
+    title: 'File your SDI claim with EDD',
+    detail: 'File your <a href="https://edd.ca.gov/en/disability/how_to_file_a_di_claim_by_mail/" target="_blank">State Disability Insurance (SDI) claim</a> at <a href="https://edd.ca.gov" target="_blank">edd.ca.gov</a>. You can file up to 4 weeks before your due date and up to 9 months after disability begins. You\'ll need your employer\'s EDD account number.'
+  });
+
+  if (el.pfl) steps.push({
+    title: 'File your PFL bonding claim with EDD',
+    detail: 'File a separate <a href="https://edd.ca.gov/en/disability/how_to_file_a_pfl_claim_by_mail/" target="_blank">Paid Family Leave (PFL) claim</a> at <a href="https://edd.ca.gov" target="_blank">edd.ca.gov</a> for the baby bonding period. This is a separate claim from SDI and must be filed within 41 days of your bonding leave starting.'
+  });
+
+  if (el.pplo) steps.push({
+    title: 'Complete the SF PPLO form with your employer',
+    detail: 'Once you receive your <strong>EDD Notice of Computation</strong>, complete the <a href="https://www.sf.gov/information--paid-parental-leave-ordinance" target="_blank">SF PPLO form</a> and submit it to your employer along with your EDD benefit amount. Your employer uses this to calculate their top-up payment. Questions? Contact <a href="https://www.sf.gov/departments/office-labor-standards-enforcement" target="_blank">SF OLSE</a> at pplo@sfgov.org or (415) 554-4190.'
+  });
+
+  if (el.cfra || el.fmla) steps.push({
+    title: 'Submit ' + [el.cfra ? 'CFRA' : '', el.fmla ? 'FMLA' : ''].filter(Boolean).join('/') + ' paperwork to HR',
+    detail: 'Request the leave request forms from your HR department. Employers must respond within 5 business days. ' + (el.cfra ? 'Learn about <a href="https://calcivilrights.ca.gov/family-rights-act/" target="_blank">CFRA rights</a>. ' : '') + (el.fmla ? 'Learn about <a href="https://www.dol.gov/agencies/whd/fmla" target="_blank">FMLA rights</a>.' : '')
+  });
+
+  steps.push({
+    title: 'Confirm health insurance continuation',
+    detail: 'Under CFRA and FMLA, your employer must maintain your group health insurance on the same terms during leave. Confirm with HR in writing that your coverage continues and clarify whether you need to pay your share of premiums during leave.'
+  });
+
+  if (inp.pto !== 'none') steps.push({
+    title: 'Clarify PTO / vacation coordination with HR',
+    detail: el.pplo
+      ? 'Your employer may require up to 2 weeks of accrued vacation before PPLO begins, and up to 2 more once PFL starts. Confirm this in writing before your leave — sick leave cannot be required.'
+      : 'Your employer may require you to use accrued PTO concurrently with CFRA/FMLA leave. Confirm the policy in writing before your leave starts.'
+  });
+
+  if (el.pplo) steps.push({
+    title: 'Review and sign the PPLO reimbursement agreement',
+    detail: 'Before receiving PPLO supplemental pay, you must sign a form agreeing to repay the supplement if you voluntarily resign within 90 days of your PFL ending and your employer requests repayment. Review the terms carefully before signing.'
+  });
+
+  steps.push({
+    title: 'Confirm your return-to-work date in writing',
+    detail: 'Your employer must reinstate you to the same or a comparable position after protected leave. Notify HR of your return date at least 2 weeks in advance. If you need to extend leave, communicate this as early as possible.'
+  });
+
+  steps.push({
+    title: 'Consult an employment attorney or HR professional for your specific situation',
+    detail: 'This tool provides general guidance only. For personalised advice — especially if you face complications, have concerns about compliance, or have a non-standard arrangement — contact a <a href="https://calcivilrights.ca.gov/contactus/" target="_blank">California employment attorney</a> or experienced HR advisor.'
+  });
+
+  document.getElementById('nextStepsList').innerHTML = steps.map(s =>
+    `<li><div class="check-box"></div><div class="check-label"><strong>${s.title}</strong><span>${s.detail}</span></div></li>`
+  ).join('');
+
+  const resources = [
+    { tag: 'California EDD',    name: 'File SDI & PFL claims',      desc: 'Apply for disability and paid family leave wage replacement',       url: 'https://edd.ca.gov' },
+    { tag: 'California EDD',    name: 'SDI benefit calculator',      desc: 'Estimate your weekly State Disability Insurance benefit amount',    url: 'https://edd.ca.gov/en/disability/calculating_di_benefit_payment_amounts/', show: b },
+    { tag: 'California EDD',    name: 'PFL benefit calculator',      desc: 'Estimate your weekly Paid Family Leave benefit amount',            url: 'https://edd.ca.gov/en/disability/Calculating_PFL_Benefit_Payment_Amounts/' },
+    { tag: 'SF OLSE',           name: 'SF PPLO information',         desc: 'Official SF PPLO guidance, PPLO pay calculator, and forms',         url: 'https://www.sf.gov/information--paid-parental-leave-ordinance', show: sf },
+    { tag: 'California CRD',    name: 'CFRA & PDL rights',           desc: 'California Civil Rights Dept — family and pregnancy leave rights', url: 'https://calcivilrights.ca.gov/family-rights-act/' },
+    { tag: 'US Dept of Labor',  name: 'FMLA employee guide',         desc: 'Federal FMLA rights, forms, and employer obligations',             url: 'https://www.dol.gov/agencies/whd/fmla', show: el.fmla },
+    { tag: 'California CRD',    name: 'File a leave complaint',      desc: 'Report CFRA, PDL, or other CA family leave violations',            url: 'https://calcivilrights.ca.gov/complaintprocess/' },
+    { tag: 'SF OLSE',           name: 'Contact OLSE',                desc: 'SF PPLO questions: pplo@sfgov.org · (415) 554-4190',              url: 'https://www.sf.gov/departments/office-labor-standards-enforcement', show: sf },
+  ];
+
+  document.getElementById('resourcesGrid').innerHTML = resources
+    .filter(r => r.show !== false)
+    .map(r => `<a class="resource-card" href="${r.url}" target="_blank"><div class="rc-tag">${r.tag}</div><div class="rc-name">${r.name}</div><div class="rc-desc">${r.desc}</div></a>`)
+    .join('');
+}
+</script>
+</body>
+</html>
